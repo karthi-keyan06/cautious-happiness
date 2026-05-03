@@ -1,0 +1,22 @@
+.reminder-card { padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+.reminder-form { display: flex; flex-direction: column; gap: 8px; padding: 14px; background: var(--bg-glass); border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.reminder-sync { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+.toggle-label { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--text-secondary); cursor: pointer; }
+.toggle-label input[type=checkbox] { accent-color: var(--accent); width: 14px; height: 14px; }
+
+.reminder-list { display: flex; flex-direction: column; gap: 6px; max-height: 250px; overflow-y: auto; }
+
+.reminder-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; background: var(--bg-glass);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  transition: all var(--transition);
+}
+.reminder-item:hover { border-color: var(--border-hover); }
+.reminder-past { opacity: 0.45; }
+
+.reminder-icon { width: 28px; height: 28px; border-radius: 6px; background: rgba(99,102,241,0.12); display: flex; align-items: center; justify-content: center; color: var(--accent); flex-shrink: 0; }
+.reminder-body { flex: 1; }
+.reminder-title { font-size: 0.875rem; font-weight: 500; }
+.reminder-time { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; display: flex; align-items: center; }

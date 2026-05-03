@@ -1,0 +1,50 @@
+.timer-card { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+
+.timer-display {
+  text-align: center;
+  padding: 28px 16px;
+  background: var(--bg-glass);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  transition: all var(--transition);
+}
+
+.timer-running {
+  border-color: rgba(99,102,241,0.3);
+  background: rgba(99,102,241,0.05);
+  animation: glow 2s ease-in-out infinite;
+}
+
+.timer-time {
+  font-family: var(--font-heading);
+  font-size: 3rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--text-primary);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.timer-status {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 8px;
+  font-weight: 500;
+}
+
+.timer-running .timer-status { color: var(--accent-light); }
+
+.timer-label {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 0.75rem; font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+
+.timer-field { display: flex; flex-direction: column; }
+
+.timer-controls { display: flex; gap: 10px; }
+.timer-btn-main { flex: 1; justify-content: center; padding: 12px; font-size: 0.95rem; }
+
+.timer-notes-toggle { display: flex; flex-direction: column; }
