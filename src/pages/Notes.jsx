@@ -107,7 +107,7 @@ export default function Notes() {
 
   const handleDownloadDrive = async (file) => {
     try {
-      const url = await downloadDriveFile(file.id)
+      const url = await downloadDriveFile(file.driveId || file.id)
       const a = document.createElement('a')
       a.href = url; a.download = file.name; a.click()
       setTimeout(() => URL.revokeObjectURL(url), 5000)
@@ -130,7 +130,7 @@ export default function Notes() {
   }
 
   // Merge local and cloud files for display
-  const allNotes = []
+  const allNotesMap = new Map()
 
   if (viewMode !== 'cloud') {
     const filtered = localNotes.filter(n => {
@@ -138,19 +138,30 @@ export default function Notes() {
       const matchSearch = n.name.toLowerCase().includes(search.toLowerCase())
       return matchSubject && matchSearch
     })
-    filtered.forEach(n => allNotes.push({ ...n, source: 'local' }))
+    filtered.forEach(n => allNotesMap.set(n.name, { ...n, source: 'local', localId: n.id }))
   }
 
   if (viewMode !== 'local' && connected) {
     const filteredDrive = driveFiles.filter(f =>
       f.name.toLowerCase().includes(search.toLowerCase())
     )
-    filteredDrive.forEach(f => allNotes.push({
-      id: f.id, name: f.name, type: f.mimeType, size: f.size,
-      subject: f.subject, createdAt: f.createdTime,
-      webViewLink: f.webViewLink, source: 'cloud'
-    }))
+    filteredDrive.forEach(f => {
+      const existing = allNotesMap.get(f.name)
+      if (existing) {
+        existing.source = 'both'
+        existing.driveId = f.id
+        existing.webViewLink = f.webViewLink
+      } else {
+        allNotesMap.set(f.name, {
+          id: f.id, name: f.name, type: f.mimeType, size: f.size,
+          subject: f.subject, createdAt: f.createdTime,
+          webViewLink: f.webViewLink, source: 'cloud', driveId: f.id
+        })
+      }
+    })
   }
+
+  const allNotes = Array.from(allNotesMap.values())
 
   return (
     <div className="page notes-page animate-fade">
@@ -243,8 +254,10 @@ export default function Notes() {
               <div className="note-source-badge">
                 {note.source === 'cloud' ? (
                   <span className="badge badge-emerald"><Cloud size={10}/> Drive</span>
-                ) : (
+                ) : note.source === 'local' ? (
                   <span className="badge badge-accent">💻 Local</span>
+                ) : (
+                  <span className="badge" style={{background:'var(--bg-secondary)', color:'var(--text-primary)', border:'1px solid var(--border)'}}>💻 Local & <Cloud size={10} style={{display:'inline',marginLeft:2,marginRight:2}}/> Drive</span>
                 )}
               </div>
 
@@ -274,16 +287,25 @@ export default function Notes() {
               </div>
 
               <div className="note-actions">
-                {note.source === 'cloud' ? (
+                {note.source === 'cloud' && (
                   <>
                     <button className="btn-icon" title="Download" onClick={() => handleDownloadDrive(note)}><Download size={14}/></button>
                     {note.webViewLink && <button className="btn-icon" title="Open in Drive" onClick={() => window.open(note.webViewLink, '_blank')}>🔗</button>}
-                    <button className="btn-icon" title="Delete from Drive" onClick={() => handleDeleteDrive(note.id)} style={{color:'var(--rose)'}}><Trash2 size={14}/></button>
+                    <button className="btn-icon" title="Delete from Drive" onClick={() => handleDeleteDrive(note.driveId)} style={{color:'var(--rose)'}}><Trash2 size={14}/></button>
                   </>
-                ) : (
+                )}
+                {note.source === 'local' && (
                   <>
                     <button className="btn-icon" title="Download" onClick={() => handleDownloadLocal(note)}><Download size={14}/></button>
-                    <button className="btn-icon" title="Delete" onClick={() => handleDeleteLocal(note.id)} style={{color:'var(--rose)'}}><Trash2 size={14}/></button>
+                    <button className="btn-icon" title="Delete" onClick={() => handleDeleteLocal(note.localId)} style={{color:'var(--rose)'}}><Trash2 size={14}/></button>
+                  </>
+                )}
+                {note.source === 'both' && (
+                  <>
+                    <button className="btn-icon" title="Download Local" onClick={() => handleDownloadLocal(note)}><Download size={14}/></button>
+                    {note.webViewLink && <button className="btn-icon" title="Open in Drive" onClick={() => window.open(note.webViewLink, '_blank')}>🔗</button>}
+                    <button className="btn-icon" title="Delete Local" onClick={() => handleDeleteLocal(note.localId)} style={{color:'var(--rose)'}}><Trash2 size={14}/></button>
+                    <button className="btn-icon" title="Delete from Drive" onClick={() => handleDeleteDrive(note.driveId)} style={{color:'var(--rose)'}}><CloudOff size={14}/></button>
                   </>
                 )}
               </div>

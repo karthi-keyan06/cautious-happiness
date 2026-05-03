@@ -5,8 +5,8 @@ const DRIVE_API = 'https://www.googleapis.com/drive/v3';
 const UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3';
 const ROOT_FOLDER_NAME = 'GATE PREPARATION';
 
-// Cache folder IDs to avoid repeated lookups
-let rootFolderId = null;
+// Cache folder promises to avoid repeated lookups and race conditions during concurrent uploads
+let rootFolderPromise = null;
 const subfolderCache = {};
 
 function getToken() {
@@ -62,20 +62,20 @@ async function findOrCreateFolder(name, parentId = null) {
 }
 
 // Get or create the root "GATE PREPARATION" folder
-export async function getRootFolder() {
-  if (rootFolderId) return rootFolderId;
-  rootFolderId = await findOrCreateFolder(ROOT_FOLDER_NAME);
-  return rootFolderId;
+export function getRootFolder() {
+  if (!rootFolderPromise) {
+    rootFolderPromise = findOrCreateFolder(ROOT_FOLDER_NAME);
+  }
+  return rootFolderPromise;
 }
 
 // Get or create a subject subfolder inside GATE PREPARATION
-export async function getSubjectFolder(subject) {
+export function getSubjectFolder(subject) {
   const folderName = subject || 'General Study';
-  if (subfolderCache[folderName]) return subfolderCache[folderName];
-  const rootId = await getRootFolder();
-  const folderId = await findOrCreateFolder(folderName, rootId);
-  subfolderCache[folderName] = folderId;
-  return folderId;
+  if (!subfolderCache[folderName]) {
+    subfolderCache[folderName] = getRootFolder().then(rootId => findOrCreateFolder(folderName, rootId));
+  }
+  return subfolderCache[folderName];
 }
 
 // Initialize all subject folders (creates them if they don't exist)
@@ -85,10 +85,7 @@ export async function initFolderStructure() {
     'Microbiology', 'Immunology', 'Plant and Animal Biology',
     'Engineering Mathematics', 'General Aptitude', 'General Study'
   ];
-  const rootId = await getRootFolder();
-  for (const subject of subjects) {
-    subfolderCache[subject] = await findOrCreateFolder(subject, rootId);
-  }
+  await Promise.all(subjects.map(subject => getSubjectFolder(subject)));
   return subfolderCache;
 }
 
