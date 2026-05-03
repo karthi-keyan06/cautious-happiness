@@ -2,7 +2,7 @@ const { app, BrowserWindow } = require('electron')
 const path = require('path')
 
 // Determine if we're in dev mode
-const isDev = !app.isPackaged
+const isDev = process.env.NODE_ENV === 'development' || process.env.VITE_DEV_SERVER_URL;
 
 function createWindow() {
   const win = new BrowserWindow({
