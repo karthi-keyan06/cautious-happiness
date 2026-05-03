@@ -24,7 +24,55 @@ function createWindow() {
     win.loadURL('http://localhost:5173')
     // win.webContents.openDevTools() // Uncomment to debug
   } else {
-    win.loadFile(path.join(__dirname, '..', 'dist', 'index.html'))
+    // Serve the built files over HTTP so Google OAuth doesn't block file://
+    const server = require('http').createServer((req, res) => {
+      let urlPath = req.url.split('?')[0];
+      if (urlPath === '/') urlPath = '/index.html';
+      let filePath = path.join(__dirname, '..', 'dist', urlPath);
+
+      const extname = String(path.extname(filePath)).toLowerCase();
+      const mimeTypes = {
+        '.html': 'text/html',
+        '.js': 'text/javascript',
+        '.css': 'text/css',
+        '.json': 'application/json',
+        '.png': 'image/png',
+        '.jpg': 'image/jpg',
+        '.svg': 'image/svg+xml',
+      };
+      const contentType = mimeTypes[extname] || 'application/octet-stream';
+
+      require('fs').readFile(filePath, (err, content) => {
+        if (err) {
+          // Fallback to index.html for SPA routing
+          require('fs').readFile(path.join(__dirname, '..', 'dist', 'index.html'), (err2, content2) => {
+            if (err2) {
+              res.writeHead(404);
+              res.end('Not found');
+            } else {
+              res.writeHead(200, { 'Content-Type': 'text/html' });
+              res.end(content2, 'utf-8');
+            }
+          });
+        } else {
+          res.writeHead(200, { 'Content-Type': contentType });
+          res.end(content, 'utf-8');
+        }
+      });
+    });
+
+    // Try to listen on the standard Vite port so Google OAuth origin matches
+    server.listen(5173, '127.0.0.1', () => {
+      win.loadURL('http://localhost:5173');
+    }).on('error', (e) => {
+      if (e.code === 'EADDRINUSE') {
+        // Port in use, probably Vite dev server is running
+        win.loadURL('http://localhost:5173');
+      } else {
+        // Fallback to file protocol if server fails
+        win.loadFile(path.join(__dirname, '..', 'dist', 'index.html'))
+      }
+    });
   }
 }
 
